@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
 
@@ -10,7 +11,7 @@ void main() {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
-  runApp(const NexusArenaApp());
+  runApp(const ProviderScope(child: NexusArenaApp()));
 }
 
 class NexusArenaApp extends StatelessWidget {

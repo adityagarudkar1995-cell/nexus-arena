@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const background = Color(0xFF0D0D0D);
-  static const card       = Color(0xFF1A1A2E);
-  static const accent     = Color(0xFF00FF88);
-  static const danger     = Color(0xFFFF4655);
-  static const surface    = Color(0xFF16213E);
-  static const onSurface  = Color(0xFFE0E0E0);
-  static const muted      = Color(0xFF6B6B8A);
+  static const background   = Color(0xFF0D0D0D);
+  static const card         = Color(0xFF1A1A2E);
+  static const accent       = Color(0xFF00FF88);
+  static const danger       = Color(0xFFFF4655);
+  static const surface      = Color(0xFF16213E);
+  static const onSurface    = Color(0xFFE0E0E0);
+  static const muted        = Color(0xFF6B6B8A);
+  static const textPrimary  = Color(0xFFFFFFFF);
+  static const textSecondary= Color(0xFF9E9E9E);
+  static const gold         = Color(0xFFFFD700);
+  static const silver       = Color(0xFFC0C0C0);
+  static const bronze       = Color(0xFFCD7F32);
+  static const purple       = Color(0xFF7B2FBE);
+  static const shimmerBase  = Color(0xFF1A1A2E);
+  static const shimmerHighlight = Color(0xFF2A2A4E);
 }
 
 ThemeData appTheme() {

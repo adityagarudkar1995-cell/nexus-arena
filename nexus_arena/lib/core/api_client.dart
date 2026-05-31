@@ -18,6 +18,7 @@ class ApiClient {
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
+    'apikey': AppConstants.insforgeAnonKey,
     if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
   };
 
@@ -37,6 +38,36 @@ class ApiClient {
       headers: _headers,
     );
     return _decode(resp);
+  }
+
+  Future<Map<String, dynamic>> patch(String path, Map<String, dynamic> body) async {
+    final resp = await http.patch(
+      Uri.parse('${AppConstants.insforgeBaseUrl}$path'),
+      headers: {..._headers, 'Prefer': 'return=representation'},
+      body: jsonEncode(body),
+    );
+    if (resp.statusCode >= 400) {
+      final b = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw ApiException(b['error'] as String? ?? 'unknown_error', resp.statusCode);
+    }
+    if (resp.body.isEmpty) return {};
+    final decoded = jsonDecode(resp.body);
+    if (decoded is List && decoded.isNotEmpty) {
+      return decoded.first as Map<String, dynamic>;
+    }
+    return decoded as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getList(String path) async {
+    final resp = await http.get(
+      Uri.parse('${AppConstants.insforgeBaseUrl}$path'),
+      headers: _headers,
+    );
+    if (resp.statusCode >= 400) {
+      final body = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw ApiException(body['error'] as String? ?? 'unknown_error', resp.statusCode);
+    }
+    return jsonDecode(resp.body) as List<dynamic>;
   }
 
   Map<String, dynamic> _decode(http.Response resp) {
