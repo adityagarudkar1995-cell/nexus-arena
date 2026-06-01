@@ -1,60 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
-import { signAdminToken, sessionCookieOptions } from '@/lib/auth';
 
-export const runtime = 'nodejs';
+const INSFORGE_BASE_URL = process.env.INSFORGE_BASE_URL || 'https://xymp52ea.ap-southeast.insforge.app';
+const INSFORGE_SERVICE_ROLE_KEY = process.env.INSFORGE_SERVICE_ROLE_KEY || 'ik_ee63b377a5ba63c5e38a150c72b0c142';
+const ADMIN_JWT_SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET || 'NexusArena@AdminPanel@2024@Secret'
+);
 
-export async function POST(req: NextRequest) {
-  // Validate env vars up front — missing keys cause a crash, not a 401.
-  const baseUrl = process.env.INSFORGE_BASE_URL;
-  const serviceKey = process.env.INSFORGE_SERVICE_ROLE_KEY;
-  if (!baseUrl || !serviceKey) {
-    console.error('[login] Missing INSFORGE_BASE_URL or INSFORGE_SERVICE_ROLE_KEY in env');
-    return NextResponse.json({ error: 'Server not configured — check env vars' }, { status: 503 });
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const { email, password } = body as { email?: string; password?: string };
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
-  }
-
-  // Use direct PostgREST fetch — @insforge/sdk is designed for browser/Deno and
-  // can throw in the Next.js Node.js runtime, masking errors as "Network error".
-  let rows: { id: string; email: string; name: string; password_hash: string }[] = [];
+export async function POST(request: NextRequest) {
   try {
-    const url = `${baseUrl}/rest/v1/admin_users?email=eq.${encodeURIComponent(email.toLowerCase())}&limit=1`;
-    const resp = await fetch(url, {
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error('[login] PostgREST error:', resp.status, text);
-      return NextResponse.json({ error: 'Database error' }, { status: 502 });
+    const body = await request.json();
+    const { email, password } = body;
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { success: false, error: 'Email and password required' },
+        { status: 400 }
+      );
     }
-    rows = await resp.json();
-  } catch (err) {
-    console.error('[login] Fetch to InsForge failed:', err);
-    return NextResponse.json({ error: 'Could not reach database' }, { status: 502 });
-  }
 
-  if (!rows.length) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
+    const insforgeUrl = `${INSFORGE_BASE_URL}/api/database/records/admin_users?email=eq.${encodeURIComponent(email)}&limit=1`;
 
-  const admin = rows[0];
-  const valid = await bcrypt.compare(password, admin.password_hash);
-  if (!valid) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
+    const dbResponse = await fetch(insforgeUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${INSFORGE_SERVICE_ROLE_KEY}`,
+      },
+    });
 
-  const token = await signAdminToken({ sub: admin.id, email: admin.email, name: admin.name });
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(sessionCookieOptions(token));
-  return res;
+    if (!dbResponse.ok) {
+      console.error('InsForge query failed:', dbResponse.status, await dbResponse.text());
+      return NextResponse.json(
+        { success: false, error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
+    const users = await dbResponse.json();
+
+    if (!users || users.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    const adminUser = users[0];
+
+    const passwordValid = await bcrypt.compare(password, adminUser.password_hash);
+
+    if (!passwordValid) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    const token = await new SignJWT({
+      admin_id: adminUser.id,
+      email: adminUser.email,
+      role: adminUser.role || 'super_admin',
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(ADMIN_JWT_SECRET);
+
+    const response = NextResponse.json(
+      { success: true, message: 'Login successful' },
+      { status: 200 }
+    );
+
+    response.cookies.set({
+      name: 'admin_token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }

@@ -1,38 +1,58 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const COOKIE = 'nexus_admin_session';
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.ADMIN_JWT_SECRET || 'NexusArena@AdminPanel@2024@Secret'
+);
 
-// Middleware runs in the Edge runtime. We verify the JWT here directly
-// with jose rather than importing from lib/auth, because auth.ts uses
-// next/headers (only available in Server Components / Route Handlers).
-// Importing a module that references next/headers causes a silent module
-// load failure at the Edge boundary, making every token check return null.
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  if (pathname.startsWith('/login')) return NextResponse.next();
+const PUBLIC_ROUTES = ['/login', '/api/auth/login'];
 
-  const token = req.cookies.get(COOKIE)?.value;
-  if (!token) return NextResponse.redirect(new URL('/login', req.url));
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  const secret = process.env.ADMIN_JWT_SECRET;
-  if (!secret) {
-    // Misconfigured server — let the request through so the page can
-    // render a proper error rather than an infinite login redirect.
-    console.error('[middleware] ADMIN_JWT_SECRET is not set');
+  if (PUBLIC_ROUTES.some((route) => pathname === route)) {
+    const token = request.cookies.get('admin_token')?.value;
+    if (token && pathname === '/login') {
+      try {
+        await jwtVerify(token, JWT_SECRET);
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      } catch {
+        return NextResponse.next();
+      }
+    }
     return NextResponse.next();
   }
 
-  try {
-    await jwtVerify(token, new TextEncoder().encode(secret));
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.includes('.')
+  ) {
     return NextResponse.next();
+  }
+
+  const token = request.cookies.get('admin_token')?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const response = NextResponse.next();
+    response.headers.set('x-admin-id', String(payload.admin_id || ''));
+    response.headers.set('x-admin-email', String(payload.email || ''));
+    return response;
   } catch {
-    const resp = NextResponse.redirect(new URL('/login', req.url));
-    resp.cookies.delete(COOKIE);
-    return resp;
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('admin_token');
+    return response;
   }
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+  ],
 };
