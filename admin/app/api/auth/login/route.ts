@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { signAdminToken, sessionCookieOptions } from '@/lib/auth';
-import { getDb } from '@/lib/db';
 
 export const runtime = 'nodejs';
+
+const INSFORGE_URL = 'https://xymp52ea.ap-southeast.insforge.app/api/database/records/admin_users';
+const INSFORGE_KEY = 'ik_ee63b377a5ba63c5e38a150c72b0c142';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,20 +19,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = getDb();
-    const { data: users, error } = await db.database
-      .from('admin_users')
-      .select('id, email, password_hash, name')
-      .eq('email', email)
-      .limit(1) as { data: { id: string; email: string; password_hash: string; name: string }[] | null; error: any };
+    const dbResponse = await fetch(
+      `${INSFORGE_URL}?email=eq.${encodeURIComponent(email)}&limit=1`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${INSFORGE_KEY}`,
+        },
+        cache: 'no-store',
+      }
+    );
 
-    if (error) {
-      console.error('InsForge query failed:', error);
+    if (!dbResponse.ok) {
+      console.error('InsForge query failed:', dbResponse.status, await dbResponse.text());
       return NextResponse.json(
         { success: false, error: 'Database connection failed' },
         { status: 500 }
       );
     }
+
+    const users = await dbResponse.json();
 
     if (!users?.length) {
       return NextResponse.json(
