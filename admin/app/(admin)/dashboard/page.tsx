@@ -3,9 +3,9 @@ import { getDb } from '@/lib/db';
 async function getStats() {
   const db = getDb();
   const [usersRes, tournamentsRes, kycRes, withdrawalsRes, walletsRes] = await Promise.all([
-    db.database.from('profiles').select('count') as any,
+    db.database.from('profiles').select('*', { count: 'exact', head: true } as any),
     db.database.from('tournaments').select('id, status') as any,
-    db.database.from('kyc_submissions').select('count').eq('status', 'submitted') as any,
+    db.database.from('kyc_submissions').select('*', { count: 'exact', head: true } as any).eq('status', 'submitted'),
     db.database.from('withdrawals').select('amount').eq('status', 'pending') as any,
     db.database.from('wallets').select('balance') as any,
   ]);
@@ -19,10 +19,10 @@ async function getStats() {
   const totalWalletPaise = wallets.reduce((s, w) => s + parseInt(w.balance || '0'), 0);
 
   return {
-    totalUsers: usersRes.data?.length ?? 0,
+    totalUsers: (usersRes as any).count ?? 0,
     openTournaments: tournaments.filter(t => t.status === 'registration_open').length,
     ongoingMatches: tournaments.filter(t => t.status === 'ongoing').length,
-    pendingKyc: kycRes.data?.length ?? 0,
+    pendingKyc: (kycRes as any).count ?? 0,
     pendingWithdrawalsCount: pendingWithdrawals.length,
     pendingWithdrawalsRs: Math.floor(totalWithdrawalPaise / 100),
     totalWalletRs: Math.floor(totalWalletPaise / 100),

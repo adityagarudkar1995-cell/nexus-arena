@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
+import { signAdminToken, sessionCookieOptions } from '@/lib/auth';
+import { getDb } from '@/lib/db';
 
-const INSFORGE_BASE_URL = process.env.INSFORGE_BASE_URL || 'https://xymp52ea.ap-southeast.insforge.app';
-const INSFORGE_SERVICE_ROLE_KEY = process.env.INSFORGE_SERVICE_ROLE_KEY || 'ik_ee63b377a5ba63c5e38a150c72b0c142';
-const ADMIN_JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || 'NexusArena@AdminPanel@2024@Secret'
-);
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,27 +17,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const insforgeUrl = `${INSFORGE_BASE_URL}/api/database/records/admin_users?email=eq.${encodeURIComponent(email)}&limit=1`;
+    const db = getDb();
+    const { data: users, error } = await db.database
+      .from('admin_users')
+      .select('id, email, password_hash, name')
+      .eq('email', email)
+      .limit(1) as { data: { id: string; email: string; password_hash: string; name: string }[] | null; error: any };
 
-    const dbResponse = await fetch(insforgeUrl, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${INSFORGE_SERVICE_ROLE_KEY}`,
-      },
-    });
-
-    if (!dbResponse.ok) {
-      console.error('InsForge query failed:', dbResponse.status, await dbResponse.text());
+    if (error) {
+      console.error('InsForge query failed:', error);
       return NextResponse.json(
         { success: false, error: 'Database connection failed' },
         { status: 500 }
       );
     }
 
-    const users = await dbResponse.json();
-
-    if (!users || users.length === 0) {
+    if (!users?.length) {
       return NextResponse.json(
         { success: false, error: 'Invalid email or password' },
         { status: 401 }
@@ -48,7 +40,6 @@ export async function POST(request: NextRequest) {
     }
 
     const adminUser = users[0];
-
     const passwordValid = await bcrypt.compare(password, adminUser.password_hash);
 
     if (!passwordValid) {
@@ -58,31 +49,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const token = await new SignJWT({
-      admin_id: adminUser.id,
+    const token = await signAdminToken({
+      sub: adminUser.id,
       email: adminUser.email,
-      role: adminUser.role || 'super_admin',
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('7d')
-      .sign(ADMIN_JWT_SECRET);
+      name: adminUser.name,
+    });
 
     const response = NextResponse.json(
       { success: true, message: 'Login successful' },
       { status: 200 }
     );
-
-    response.cookies.set({
-      name: 'admin_token',
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
+    response.cookies.set(sessionCookieOptions(token));
     return response;
   } catch (error) {
     console.error('Login error:', error);

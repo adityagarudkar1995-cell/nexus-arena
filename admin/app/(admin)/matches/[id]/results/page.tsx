@@ -26,8 +26,8 @@ async function declareResults(matchId: string, formData: FormData) {
 
   const winners: { regId: string; userId: string; kills: number; points: number }[] = [];
   for (let rank = 1; rank <= 3; rank++) {
-    const regId = formData.get(`reg_${rank}`) as string;
-    const userId = formData.get(`user_${rank}`) as string;
+    const regValue = formData.get(`reg_${rank}`) as string;
+    const [regId, userId] = regValue?.split('|') ?? ['', ''];
     const kills = parseInt(formData.get(`kills_${rank}`) as string ?? '0');
     const points = parseInt(formData.get(`points_${rank}`) as string ?? '0');
     if (regId && userId) winners.push({ regId, userId, kills, points });
@@ -160,12 +160,11 @@ export default async function ResultsPage({ params }: { params: { id: string } }
                   <select name={`reg_${rank}`} className="input" required>
                     <option value="">— Select player —</option>
                     {(regs ?? []).map((r: any) => (
-                      <option key={r.id} value={r.id}>
+                      <option key={r.id} value={`${r.id}|${r.user_id}`}>
                         {r.profiles?.display_name ?? 'Unknown'} ({r.profiles?.game_uid ?? r.user_id.slice(0, 8)})
                       </option>
                     ))}
                   </select>
-                  {/* Hidden user_id — populated via JS below */}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -177,7 +176,6 @@ export default async function ResultsPage({ params }: { params: { id: string } }
                     <input name={`points_${rank}`} type="number" min="0" defaultValue="0" className="input" />
                   </div>
                 </div>
-                <input type="hidden" name={`user_${rank}`} id={`user_${rank}`} />
               </div>
             );
           })}
@@ -196,17 +194,6 @@ export default async function ResultsPage({ params }: { params: { id: string } }
         </form>
       )}
 
-      {/* Populate hidden user_id fields from the selected registration */}
-      <script dangerouslySetInnerHTML={{ __html: `
-        document.querySelectorAll('select[name^="reg_"]').forEach(select => {
-          const rank = select.name.split('_')[1];
-          const regData = ${JSON.stringify(Object.fromEntries((regs ?? []).map((r: any) => [r.id, r.user_id])))};
-          select.addEventListener('change', () => {
-            const hiddenField = document.getElementById('user_' + rank);
-            if (hiddenField) hiddenField.value = regData[select.value] || '';
-          });
-        });
-      `}} />
     </div>
   );
 }

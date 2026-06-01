@@ -10,11 +10,10 @@ export function getDb() {
 /** Direct PostgREST RPC with service-role privileges. */
 export async function rpc(funcName: string, params: Record<string, unknown>) {
   const resp = await fetch(
-    `${process.env.INSFORGE_BASE_URL}/rest/v1/rpc/${funcName}`,
+    `${process.env.INSFORGE_BASE_URL}/api/database/rpc/${funcName}`,
     {
       method: 'POST',
       headers: {
-        apikey: process.env.INSFORGE_SERVICE_ROLE_KEY!,
         Authorization: `Bearer ${process.env.INSFORGE_SERVICE_ROLE_KEY!}`,
         'Content-Type': 'application/json',
         Prefer: 'return=representation',

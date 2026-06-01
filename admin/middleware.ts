@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_ROUTES.some((route) => pathname === route)) {
-    const token = request.cookies.get('admin_token')?.value;
+    const token = request.cookies.get('nexus_admin_session')?.value;
     if (token && pathname === '/login') {
       try {
         await jwtVerify(token, JWT_SECRET);
@@ -32,7 +32,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('admin_token')?.value;
+  const token = request.cookies.get('nexus_admin_session')?.value;
 
   if (!token) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     return response;
   } catch {
     const response = NextResponse.redirect(new URL('/login', request.url));
-    response.cookies.delete('admin_token');
+    response.cookies.delete('nexus_admin_session');
     return response;
   }
 }
