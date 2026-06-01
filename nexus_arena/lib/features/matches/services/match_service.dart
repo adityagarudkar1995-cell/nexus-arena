@@ -37,6 +37,19 @@ class MatchService {
     return Match.fromJson(data.first as Map<String, dynamic>);
   }
 
+  /// Returns all match results for the authenticated user (RLS auto-filters).
+  static Future<List<MatchResult>> fetchMyResults() async {
+    final token = await AuthService.getToken();
+    final client = ApiClient(accessToken: token);
+    final data = await client.getList(
+      '/rest/v1/match_results?order=created_at.desc',
+    );
+    return data
+        .cast<Map<String, dynamic>>()
+        .map(MatchResult.fromJson)
+        .toList();
+  }
+
   static Future<Map<String, dynamic>> joinTournament(
     String tournamentId, {
     String? teamName,

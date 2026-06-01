@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "801263438778",
+    "project_id": "nexus-arena-adc2b",
+    "storage_bucket": "nexus-arena-adc2b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801263438778:android:26a823651cc10268fe2b83",
+        "android_client_info": {
+          "package_name": "com.nexusarena.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMSlwOj8YQ76axmMRF8nS289WOdTZjJPs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

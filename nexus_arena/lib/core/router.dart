@@ -10,6 +10,7 @@ import '../features/wallet/screens/add_money_screen.dart';
 import '../features/wallet/screens/withdraw_screen.dart';
 import '../features/results/screens/results_screen.dart';
 import '../features/profile/screens/profile_screen.dart';
+import '../features/profile/screens/edit_profile_screen.dart';
 import '../features/kyc/screens/kyc_screen.dart';
 import '../features/settings/screens/settings_screen.dart';
 
@@ -67,6 +68,10 @@ final router = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (ctx, s) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/edit-profile',
+      builder: (ctx, s) => const EditProfileScreen(),
     ),
     GoRoute(
       path: '/kyc',

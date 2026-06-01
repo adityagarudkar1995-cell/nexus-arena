@@ -3,6 +3,13 @@ class AppConstants {
   static const functionsBaseUrl   = 'https://xymp52ea.functions.insforge.app';
   static const insforgeAnonKey    = String.fromEnvironment('INSFORGE_ANON_KEY');
 
+  // Razorpay publishable key_id (safe on client). Pass via --dart-define.
+  static const razorpayKeyId      = String.fromEnvironment('RAZORPAY_KEY_ID');
+
+  // Top-up limits (Rs)
+  static const minTopUpRs = 50;
+  static const maxTopUpRs = 10000;
+
   // Wallet
   static const maxWithdrawalPerDayRs = 10000;
   static const tdsPercent            = 30;

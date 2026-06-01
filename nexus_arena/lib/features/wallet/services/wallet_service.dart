@@ -42,6 +42,21 @@ class WalletService {
         .toList();
   }
 
+  /// Requests a withdrawal via the server-side function (atomic deduct + insert).
+  /// Returns the server response map; throws ApiException on validation failure.
+  static Future<Map<String, dynamic>> requestWithdrawal({
+    required int amountRs,
+    required String upiId,
+  }) async {
+    final token = await AuthService.getToken();
+    final client = ApiClient(accessToken: token);
+    return client.post(
+      '/request-withdrawal',
+      {'amount_rs': amountRs, 'upi_id': upiId},
+      isFunction: true,
+    );
+  }
+
   static Future<int> fetchTodayWithdrawnPaise() async {
     final token = await AuthService.getToken();
     final client = ApiClient(accessToken: token);

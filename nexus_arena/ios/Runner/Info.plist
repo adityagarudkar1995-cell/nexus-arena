@@ -4,6 +4,11 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- image_picker (KYC document capture) requires these usage strings on iOS. -->
+	<key>NSCameraUsageDescription</key>
+	<string>NEXUS ARENA needs camera access to capture your KYC documents and selfie.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NEXUS ARENA needs photo library access to upload your KYC documents.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

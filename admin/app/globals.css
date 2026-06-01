@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { background: #0D0D0D; color: #E0E0E0; font-family: Inter, system-ui, sans-serif; }
+
+.btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors; }
+.btn-accent { @apply btn bg-accent text-black hover:bg-[#00cc6a]; }
+.btn-danger { @apply btn bg-danger text-white hover:bg-red-700; }
+.btn-ghost { @apply btn border border-muted text-gray-300 hover:border-accent hover:text-accent; }
+.card { @apply bg-card rounded-xl border border-[#2a2a4e] p-5; }
+.input { @apply w-full bg-surface border border-[#2a2a4e] rounded-lg px-3 py-2 text-white placeholder-muted focus:outline-none focus:border-accent; }
+.label { @apply block text-xs font-semibold text-muted uppercase tracking-widest mb-1.5; }
+.badge { @apply inline-block px-2.5 py-0.5 rounded-full text-xs font-bold; }

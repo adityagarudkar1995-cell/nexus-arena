@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
+import '../../notifications/services/notification_service.dart';
 import '../../profile/models/profile.dart';
 import '../../profile/services/profile_service.dart';
 
@@ -9,7 +10,11 @@ class AuthNotifier extends AsyncNotifier<Profile?> {
     final authed = await AuthService.isAuthenticated();
     if (!authed) return null;
     try {
-      return await ProfileService.fetchProfile();
+      final profile = await ProfileService.fetchProfile();
+      // Fire-and-forget: ensures token is registered on every authenticated
+      // app start, including immediately after first login.
+      registerToken();
+      return profile;
     } catch (_) {
       return null;
     }
