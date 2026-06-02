@@ -49,9 +49,12 @@ class _OtpScreenState extends State<OtpScreen> {
       if (mounted) context.go('/home');
     } on ApiException catch (e) {
       if (!mounted) return;
-      final msg = e.message == 'invalid_otp'
-          ? 'Invalid OTP. Please try again.'
-          : 'OTP expired. Request a new one.';
+      final msg = switch (e.message) {
+        'invalid_otp' => 'Invalid OTP. Please try again.',
+        'otp_expired' => 'OTP expired. Request a new one.',
+        'rate_limited' => 'Too many attempts. Please wait and try again.',
+        _ => 'Something went wrong. Please check your connection and retry.',
+      };
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(msg),
         backgroundColor: AppColors.danger,

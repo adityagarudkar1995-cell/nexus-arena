@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const response = NextResponse.next();
-    response.headers.set('x-admin-id', String(payload.admin_id || ''));
+    response.headers.set('x-admin-id', String(payload.sub || ''));
     response.headers.set('x-admin-email', String(payload.email || ''));
     return response;
   } catch {

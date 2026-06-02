@@ -26,11 +26,11 @@ class Wallet {
     return Wallet(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      balancePaise: int.parse(json['balance']?.toString() ?? '0'),
-      totalDepositedPaise: int.parse(json['total_deposited']?.toString() ?? '0'),
-      totalWithdrawnPaise: int.parse(json['total_withdrawn']?.toString() ?? '0'),
-      totalWonPaise: int.parse(json['total_won']?.toString() ?? '0'),
-      totalTdsDeductedPaise: int.parse(json['total_tds_deducted']?.toString() ?? '0'),
+      balancePaise: int.tryParse(json['balance']?.toString() ?? '') ?? 0,
+      totalDepositedPaise: int.tryParse(json['total_deposited']?.toString() ?? '') ?? 0,
+      totalWithdrawnPaise: int.tryParse(json['total_withdrawn']?.toString() ?? '') ?? 0,
+      totalWonPaise: int.tryParse(json['total_won']?.toString() ?? '') ?? 0,
+      totalTdsDeductedPaise: int.tryParse(json['total_tds_deducted']?.toString() ?? '') ?? 0,
     );
   }
 }

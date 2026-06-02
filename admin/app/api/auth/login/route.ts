@@ -4,8 +4,8 @@ import { signAdminToken, sessionCookieOptions } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
-const INSFORGE_URL = 'https://xymp52ea.ap-southeast.insforge.app/api/database/records/admin_users';
-const INSFORGE_KEY = 'ik_ee63b377a5ba63c5e38a150c72b0c142';
+const INSFORGE_URL = `${process.env.INSFORGE_BASE_URL}/api/database/records/admin_users`;
+const INSFORGE_KEY = process.env.INSFORGE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {

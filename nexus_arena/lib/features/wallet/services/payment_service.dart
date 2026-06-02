@@ -18,7 +18,7 @@ class RazorpayOrder {
   factory RazorpayOrder.fromJson(Map<String, dynamic> json) {
     return RazorpayOrder(
       orderId: json['order_id'] as String,
-      amountPaise: int.parse(json['amount'].toString()),
+      amountPaise: int.tryParse(json['amount']?.toString() ?? '') ?? 0,
       currency: json['currency'] as String? ?? 'INR',
       keyId: json['key_id'] as String? ?? '',
     );

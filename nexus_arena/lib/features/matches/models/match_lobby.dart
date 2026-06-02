@@ -17,7 +17,11 @@ class MatchLobby {
     this.roomPassword,
   });
 
-  bool get isRoomVisible => roomId != null && roomId!.isNotEmpty;
+  bool get isRoomVisible {
+    if (roomId == null || roomId!.isEmpty) return false;
+    if (roomIdVisibleAt == null) return false;
+    return DateTime.now().isAfter(roomIdVisibleAt!);
+  }
 
   bool get isMatchStarted =>
       ['live', 'completed', 'cancelled'].contains(status);

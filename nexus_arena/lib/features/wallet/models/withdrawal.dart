@@ -29,7 +29,7 @@ class Withdrawal {
     return Withdrawal(
       id: json['id'] as String,
       userId: json['user_id'] as String,
-      amountPaise: int.parse(json['amount']?.toString() ?? '0'),
+      amountPaise: int.tryParse(json['amount']?.toString() ?? '') ?? 0,
       upiId: json['upi_id'] as String,
       status: json['status'] as String,
       rejectionReason: json['rejection_reason'] as String?,

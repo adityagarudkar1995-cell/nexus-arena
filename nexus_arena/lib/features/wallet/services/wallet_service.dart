@@ -60,16 +60,15 @@ class WalletService {
   static Future<int> fetchTodayWithdrawnPaise() async {
     final token = await AuthService.getToken();
     final client = ApiClient(accessToken: token);
-    final today = DateTime.now().toUtc();
-    final startOfDay = DateTime.utc(today.year, today.month, today.day)
-        .toIso8601String();
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
     final data = await client.getList(
       '/rest/v1/withdrawals?requested_at=gte.$startOfDay&status=not.in.(failed,rejected)&select=amount',
     );
     return data.fold<int>(
       0,
       (sum, row) =>
-          sum + int.parse((row as Map<String, dynamic>)['amount']?.toString() ?? '0'),
+          sum + (int.tryParse((row as Map<String, dynamic>)['amount']?.toString() ?? '') ?? 0),
     );
   }
 }

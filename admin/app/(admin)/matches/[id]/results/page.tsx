@@ -56,33 +56,41 @@ async function declareResults(matchId: string, formData: FormData) {
 
     const mrId = mrRows?.[0]?.id ?? null;
 
-    // 2. Credit net prize
-    await rpc('credit_wallet', {
-      p_user_id: userId,
-      p_amount: net,
-      p_type: 'prize',
-      p_reference_id: mrId,
-      p_ref_type: 'match_result',
-      p_description: `Prize: ${match.tournaments.title} — Rank #${i + 1}`,
-    });
+    try {
+      // 2. Credit net prize
+      await rpc('credit_wallet', {
+        p_user_id: userId,
+        p_amount: net,
+        p_type: 'prize',
+        p_reference_id: mrId,
+        p_ref_type: 'match_result',
+        p_description: `Prize: ${match.tournaments.title} — Rank #${i + 1}`,
+      });
 
-    // 3. Record TDS as a debit (for transaction history)
-    await rpc('deduct_wallet', {
-      p_user_id: userId,
-      p_amount: tds,
-      p_type: 'tds',
-      p_reference_id: mrId,
-      p_ref_type: 'match_result',
-      p_description: `TDS (30%): ${match.tournaments.title}`,
-    });
+      // 3. Record TDS as a debit (for transaction history)
+      await rpc('deduct_wallet', {
+        p_user_id: userId,
+        p_amount: tds,
+        p_type: 'tds',
+        p_reference_id: mrId,
+        p_ref_type: 'match_result',
+        p_description: `TDS (30%): ${match.tournaments.title}`,
+      });
+    } catch (walletErr) {
+      // Rollback: remove the result row so declaration can be retried
+      if (mrId) {
+        await db.database.from('match_results').delete().eq('id', mrId);
+      }
+      throw new Error(`Wallet update failed for rank #${i + 1}: ${(walletErr as Error).message}`);
+    }
 
-    // 4. Send WIN_ANNOUNCEMENT notification
-    await sendNotification({
+    // 4. Send WIN_ANNOUNCEMENT notification (non-critical — don't block on failure)
+    sendNotification({
       userIds: [userId],
       title: '🎉 You Won!',
       body: `You finished Rank #${i + 1} in ${match.tournaments.title}. ₹${Math.floor(net / 100)} credited!`,
       data: { type: 'WIN_ANNOUNCEMENT', amount_rs: String(Math.floor(net / 100)) },
-    });
+    }).catch((e) => console.error('Notification failed for rank', i + 1, e));
   }
 
   // 5. Complete match + tournament
